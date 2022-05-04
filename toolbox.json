@@ -1,0 +1,5 @@
+{
+	"name"  : "sys-reader",
+	"tid"   : "430000000000000D",
+	"requires_reboot": true
+}
