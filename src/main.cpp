@@ -3,68 +3,19 @@
 #include <cstring>
 #include <cstdio>
 #include <string>
+#include <arpa/inet.h>
+#include "util.hpp"
 
 #include <switch.h>
 
-#define INNER_HEAP_SIZE 0x80000
+#include "easywsclient.hpp"
+#include "json.hpp"
 
-extern "C"
-{
-    u32 __nx_applet_type = AppletType_None;
-    u32 __nx_fs_num_sessions = 1;
-    size_t nx_inner_heap_size = INNER_HEAP_SIZE;
-    char nx_inner_heap[INNER_HEAP_SIZE];
-    void __libnx_initheap(void)
-    {
-        void *addr = nx_inner_heap;
-        size_t size = nx_inner_heap_size;
-        extern char *fake_heap_start;
-        extern char *fake_heap_end;
-        fake_heap_start = (char *)addr;
-        fake_heap_end = (char *)addr + size;
-    }
+using nlohmann::json;
+using easywsclient::WebSocket;
 
-    void __appInit(void)
-    {
-        if (R_FAILED(smInitialize()))
-        {
-            fatalThrow(MAKERESULT(Module_Libnx, LibnxError_InitFail_SM));
-        }
-        Result rc = setsysInitialize();
-        if (R_SUCCEEDED(rc))
-        {
-            SetSysFirmwareVersion fw;
-            rc = setsysGetFirmwareVersion(&fw);
-            if (R_SUCCEEDED(rc))
-                hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
-            setsysExit();
-        }
-        rc = fsInitialize();
-        if (R_FAILED(rc))
-            diagAbortWithResult(MAKERESULT(Module_Libnx, LibnxError_InitFail_FS));
-        fsdevMountSdmc();
-
-        rc = hidInitialize();
-        if (R_FAILED(rc))
-            diagAbortWithResult(MAKERESULT(Module_Libnx, LibnxError_InitFail_HID));
-    }
-
-    void __appExit(void)
-    {
-        hidExit();
-        fsdevUnmountAll();
-        fsExit();
-        smExit();
-    }
-}
-
-void WriteToLog(std::string message)
-{
-    FILE *fp = fopen("sdmc:/sys-reader.log", "a");
-    fprintf(fp, message.c_str());
-    fprintf(fp, "\n");
-    fclose(fp);
-}
+std::string wsserverHost = std::string("ws://192.168.1.2:9876");
+std::string username;
 
 
 int main(int argc, char **argv)
@@ -76,6 +27,7 @@ int main(int argc, char **argv)
     padInitializeDefault(&pad);
 
     bool recording = true;
+    WebSocket::pointer ws = WebSocket::from_url(wsserverHost);
 
     while (true)
     {
@@ -83,27 +35,82 @@ int main(int argc, char **argv)
         padUpdate(&pad);
         u64 kDown = padGetButtonsDown(&pad);
 
-        if (kDown & HidNpadButton_Plus && kDown & HidNpadButton_Minus)
-        {
-            recording = !recording;
-            WriteToLog("Toggled recording to logfile");
-            
+
+        if (ws){
+            if(ws->getReadyState() != WebSocket::OPEN){
+                ws = WebSocket::from_url(wsserverHost);
+            } else {
+                ws->poll();
+                ws->dispatch(handle_message);
+            }
         }
+
 
         if (recording)
         {
+
+            json wsMessage;
+            wsMessage["type"] = "ButtonsPressed";
+            wsMessage["data"]["pressedButtons"] = json::array();
+
             if (kDown & HidNpadButton_A )
-            {
-                WriteToLog("A pressed");
-            }
+                buttonPressed("HidNpadButton_A", wsMessage);
 
             if (kDown & HidNpadButton_B )
+                buttonPressed("HidNpadButton_B", wsMessage);
+            
+            if (kDown & HidNpadButton_X )
+                buttonPressed("HidNpadButton_X", wsMessage);
+            
+            if (kDown & HidNpadButton_Y )
+                buttonPressed("HidNpadButton_Y", wsMessage);
+
+            if (kDown & HidNpadButton_StickL )
+                buttonPressed("HidNpadButton_StickL", wsMessage);
+            
+            if (kDown & HidNpadButton_StickR )
+                buttonPressed("HidNpadButton_StickR", wsMessage);
+
+            if (kDown & HidNpadButton_L )
+                buttonPressed("HidNpadButton_L", wsMessage);
+
+            if (kDown & HidNpadButton_R )
+                buttonPressed("HidNpadButton_R", wsMessage);
+            
+            if (kDown & HidNpadButton_ZL )
+                buttonPressed("HidNpadButton_ZL", wsMessage);
+
+            if (kDown & HidNpadButton_ZR )
+                buttonPressed("HidNpadButton_ZR", wsMessage);
+
+            if (kDown & HidNpadButton_Plus )
+                buttonPressed("HidNpadButton_Plus", wsMessage);
+            
+            if (kDown & HidNpadButton_Minus )
+                buttonPressed("HidNpadButton_Minus", wsMessage);
+
+            if (kDown & HidNpadButton_Left  )
+                buttonPressed("HidNpadButton_Left ", wsMessage);
+            
+            if (kDown & HidNpadButton_Up )
+                buttonPressed("HidNpadButton_Up", wsMessage);
+
+            if (kDown & HidNpadButton_Right )
+                buttonPressed("HidNpadButton_Right", wsMessage);
+
+            if (kDown & HidNpadButton_Down )
+                buttonPressed("HidNpadButton_Down", wsMessage);
+            
+
+            if (ws && wsMessage["data"]["pressedButtons"].size() > 0)
             {
-                WriteToLog("B pressed");
+                ws->send(wsMessage.dump());
+                WriteToLog(wsMessage.dump());
             }
+                
         }
 
-        svcSleepThread(1e+8L);
+        svcSleepThread(1e+7);
     }
     return 0;
 }
