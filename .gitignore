@@ -13,3 +13,5 @@ out/*
 *.code-workspace
 *.flag
 *.zip
+.vscode/settings.json
+sys-reader.log
