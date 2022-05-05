@@ -1,0 +1,15 @@
+*.d
+*.o
+*.lst
+*.map
+main
+out/*
+*.nro
+*.nacp
+*.elf
+*.nsp
+*.npdm
+*.nso
+*.code-workspace
+*.flag
+*.zip
