@@ -1,5 +1,5 @@
 {
-	"name"  : "sys-reader",
-	"tid"   : "430000000000000D",
-	"requires_reboot": true
+    "name": "sys-reader",
+    "tid": "00FF0000636C6BF2",
+    "requires_reboot": false
 }
