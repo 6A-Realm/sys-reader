@@ -40,7 +40,7 @@ DEFINES	:=	-DDISABLE_IPC -DTARGET="\"$(TARGET)\"" -DTARGET_VERSION="\"$(TARGET_V
 ARCH	:=	-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 
 CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
-			$(ARCH) $(DEFINES)
+			$(ARCH) $(DEFINES) `curl-config --cflags`
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
 
@@ -49,7 +49,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti -std=gnu++17
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lnx $(foreach lib,$(LIBNAMES),-l$(lib))
+LIBS	:= `curl-config --cflags` -lnx -lm $(foreach lib,$(LIBNAMES),-l$(lib))
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
