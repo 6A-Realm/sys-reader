@@ -77,7 +77,7 @@ void handle_message(const std::string & message)
     WriteToLog("Recieved: " + message);
 }
 
-void buttonPressed(std::string button, json& wsMessage){
+void buttonPressed(std::string button, json& pressedButtons){
     WriteToLog(button + " pressed");
-    wsMessage["data"]["pressedButtons"].push_back(button);
+    pressedButtons.push_back(button);
 }
