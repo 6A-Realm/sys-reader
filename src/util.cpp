@@ -45,6 +45,11 @@ extern "C"
             hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
         setsysExit();
 
+        R_ASSERT(setInitialize());
+        R_ASSERT(pmdmntInitialize());
+        R_ASSERT(nsInitialize());
+        R_ASSERT(pminfoInitialize());
+
         static const SocketInitConfig socketInitConfig = {
             .bsdsockets_version = 1,
 
@@ -69,6 +74,10 @@ extern "C"
         hidExit();
         fsdevUnmountAll();
         fsExit();;
+        pminfoExit();
+        nsExit();
+        pmdmntExit();
+        setExit();
     }
 }
 
@@ -80,4 +89,23 @@ void handle_message(const std::string & message)
 void buttonPressed(std::string button, json& pressedButtons){
     WriteToLog(button + " pressed");
     pressedButtons.push_back(button);
+}
+
+const char *getAppName(u64 programId)
+{
+    static NsApplicationControlData appControlData;
+    size_t appControlDataSize;
+    NacpLanguageEntry *languageEntry;
+
+    memset(&appControlData, 0, sizeof(NsApplicationControlData));
+
+    if (R_SUCCEEDED(nsGetApplicationControlData(NsApplicationControlSource_Storage, programId, &appControlData, sizeof(NsApplicationControlData), &appControlDataSize)))
+    {
+        if (R_SUCCEEDED(nacpGetLanguageEntry(&appControlData.nacp, &languageEntry)))
+        {
+            if (languageEntry != nullptr)
+                return languageEntry->name;
+        }
+    }
+    return "A Game";
 }
