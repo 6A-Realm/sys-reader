@@ -21,3 +21,4 @@ using nlohmann::json;
 void WriteToLog(std::string message);
 void handle_message(const std::string & message);
 void buttonPressed(std::string button, json& wsMessage);
+const char *getAppName(u64 programId);
